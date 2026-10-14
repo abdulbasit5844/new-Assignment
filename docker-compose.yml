@@ -1,0 +1,14 @@
+name: lab06
+
+services:
+  api:
+    # Docker Hub image, configured via the DOCKER_IMAGE environment variable,
+    # e.g. DOCKER_IMAGE=<dockerhub-username>/linear-regression-lab06:latest
+    # Compose refuses to run if it is not set.
+    image: ${DOCKER_IMAGE:?DOCKER_IMAGE must be set to your Docker Hub image}
+    container_name: lab06-api
+    ports:
+      - "5000:5000"
+    # Never start automatically (not on Docker daemon start or machine boot).
+    # The API is started only by the Jenkins Build stage.
+    restart: "no"
