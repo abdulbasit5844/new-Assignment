@@ -9,6 +9,13 @@
 A Flask REST API serving a linear regression model, packaged with Docker, run with Docker Compose,
 and started by a Jenkins Declarative Pipeline triggered by a GitHub push webhook.
 
+## Live API
+
+Deployed on EC2 by the Jenkins Build stage:
+
+- http://13.51.196.90:5000/health
+- http://13.51.196.90:5000/predict?x1=2&x2=3&x3=1
+
 ## Model
 
 ```
