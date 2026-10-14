@@ -1,14 +1,18 @@
 // Lab-06: Containerized Build Stage Automation
 // Student: Abdul Basit (FA22-BAI-001)
 //
-// Required Jenkins configuration (no values are hardcoded here):
-//   - Job type: Pipeline from SCM, pointing at your GitHub repository.
-//   - Environment variable DOCKER_IMAGE (job or global property), e.g.
-//       <dockerhub-username>/linear-regression-lab06:latest
+// Required Jenkins configuration:
+//   - Job type: Pipeline from SCM, pointing at the GitHub repository.
 //   - "GitHub hook trigger for GITScm polling" enabled (GitHub plugin).
+// DOCKER_IMAGE defaults to the Docker Hub image below; a DOCKER_IMAGE
+// environment variable set in Jenkins overrides it.
 
 pipeline {
     agent any
+
+    environment {
+        DOCKER_IMAGE = "${env.DOCKER_IMAGE ?: 'aen8aen/linear-regression-lab06:latest'}"
+    }
 
     triggers {
         // Run on GitHub push webhook

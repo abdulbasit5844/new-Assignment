@@ -88,12 +88,12 @@ Then run the same `curl` commands.
 
 ## 2. Build and push the Docker image to Docker Hub
 
-Replace `<dockerhub-username>` with your own Docker Hub username.
+Docker Hub repository: https://hub.docker.com/r/aen8aen/linear-regression-lab06
 
 ```bash
 docker login
-docker build -t <dockerhub-username>/linear-regression-lab06:latest .
-docker push <dockerhub-username>/linear-regression-lab06:latest
+docker build -t aen8aen/linear-regression-lab06:latest .
+docker push aen8aen/linear-regression-lab06:latest
 ```
 
 The Jenkins pipeline does not build or push images; it only pulls the image you pushed here.
@@ -107,7 +107,7 @@ git init
 git add .
 git commit -m "Lab-06: containerized build stage automation"
 git branch -M main
-git remote add origin <your-github-repository-url>
+git remote add origin https://github.com/abdulbasit5844/new-Assignment.git
 git push -u origin main
 ```
 
@@ -117,7 +117,7 @@ On the machine running Jenkins (for example your EC2 instance):
 
 1. Install Docker and the Docker Compose v2 plugin (`docker compose version` must work), plus `curl`.
 2. Let the Jenkins user run Docker: `sudo usermod -aG docker jenkins && sudo systemctl restart jenkins`.
-3. Open inbound port **5000** in the EC2 security group, and the Jenkins port (8080 by default).
+3. Open inbound port **5000** in the EC2 security group, and the Jenkins port **8081** (Jenkins runs on 8081 here because 8080 is used by another container).
 4. Do **not** start the API manually. It stays DOWN until Jenkins runs the Build stage.
    `docker-compose.yml` uses `restart: "no"` and nothing is enabled on boot, so after a reboot
    the API is DOWN again until the next Jenkins build.
@@ -125,7 +125,7 @@ On the machine running Jenkins (for example your EC2 instance):
 Check that it is down before the first build:
 
 ```bash
-curl http://<ec2-public-ip>:5000/health   # should fail: connection refused
+curl http://13.51.196.90:5000/health   # should fail: connection refused
 ```
 
 ## 5. Configure Jenkins
@@ -133,21 +133,18 @@ curl http://<ec2-public-ip>:5000/health   # should fail: connection refused
 1. Install the plugins **Git**, **GitHub**, and **Pipeline**.
 2. Create a **Pipeline** job:
    - *Definition*: **Pipeline script from SCM**
-   - *SCM*: Git, *Repository URL*: `<your-github-repository-url>`, *Branch*: `*/main`
+   - *SCM*: Git, *Repository URL*: `https://github.com/abdulbasit5844/new-Assignment.git`, *Branch*: `*/main`
    - *Script Path*: `Jenkinsfile`
    - *Build Triggers*: tick **GitHub hook trigger for GITScm polling**
-3. Set the image variable. Either:
-   - *Manage Jenkins → System → Global properties → Environment variables*, or
-   - in the job, via an environment-injection option,
-
-   add `DOCKER_IMAGE = <dockerhub-username>/linear-regression-lab06:latest`.
-   If it is missing, the Build stage fails with a clear error.
+3. The image is set in the `Jenkinsfile` (`DOCKER_IMAGE = aen8aen/linear-regression-lab06:latest`).
+   To use a different image, set a `DOCKER_IMAGE` environment variable in
+   *Manage Jenkins → System → Global properties*; it overrides the default.
 
 ## 6. Configure the GitHub webhook
 
 In the GitHub repository: *Settings → Webhooks → Add webhook*
 
-- *Payload URL*: `http://<jenkins-host>:8080/github-webhook/` (the trailing slash is required)
+- *Payload URL*: `http://13.51.196.90:8081/github-webhook/` (the trailing slash is required)
 - *Content type*: `application/json`
 - *Events*: **Just the push event**
 
@@ -161,18 +158,18 @@ The pipeline:
 1. **Checkout**: `checkout scm` fetches the repository configured in the job.
 2. **Build**: runs `docker compose pull` and `docker compose up -d --force-recreate`, then polls
    `/health` for up to 60 seconds and calls `/predict?x1=2&x2=3&x3=1`.
-   The script uses `set -eu`, so any failing command, a missing `DOCKER_IMAGE`, or an API that never
+   The script uses `set -eu`, so any failing command or an API that never
    becomes healthy fails the build.
 
 Verify from your own machine:
 
 ```bash
-curl http://<ec2-public-ip>:5000/health
-curl "http://<ec2-public-ip>:5000/predict?x1=2&x2=3&x3=1"
+curl http://13.51.196.90:5000/health
+curl "http://13.51.196.90:5000/predict?x1=2&x2=3&x3=1"
 ```
 
 To stop the API manually:
 
 ```bash
-DOCKER_IMAGE=<dockerhub-username>/linear-regression-lab06:latest docker compose down
+DOCKER_IMAGE=aen8aen/linear-regression-lab06:latest docker compose down
 ```
